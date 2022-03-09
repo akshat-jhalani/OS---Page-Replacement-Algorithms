@@ -67,6 +67,9 @@ class NewMap
           cout << hex << this->map[i].getKey()<< ": "<< this->map[i].getValue()<< "\n";
         }
     }
+    vector<Pairs> getList(){
+      return this->map;
+    }
 };
 
 
@@ -74,7 +77,7 @@ class NewMap
 int main(int argc, char const *argv[]) {
 
   ifstream file;
-  file.open("bzip.trace");
+  file.open("test.trace");
   unsigned int address;
   char value;
   Pairs KVpair;
@@ -89,7 +92,17 @@ int main(int argc, char const *argv[]) {
   vector<unsigned int> pageTable;
   NewMap memory;
 
-  
+  for (int i = 0; i < refList.getList().size(); i++){
+    int temp = refList.getList()[i].getKey();
+    int temp2 = (int)temp/4096;
+    cout <<"\n" << temp << ": "<< temp2;
+    // pageTable.push_back(temp/4096);
+  }
+
+  // for(int i =0; i < pageTable.size();i++){
+  //   cout << pageTable[i] << "\n";
+  // }
+
 
 
 
