@@ -4,74 +4,135 @@
 #include <iterator>
 #include <queue>
 #include <vector>
-
+#include <list>
+#include <string>
 using namespace std;
 
 class Pairs
 {
-    private:
-        unsigned key;
-        char value;
+private:
+  unsigned key;
+  char value;
 
-    public:
-      unsigned getKey(){
-          return this->key;
-      }
-      char getValue(){
-          return this->value;
-      }
+public:
+  unsigned getKey()
+  {
+    return this->key;
+  }
+  char getValue()
+  {
+    return this->value;
+  }
 
-      void setKey(unsigned keyPassed){
-        this->key = keyPassed;
-      }
+  void setKey(unsigned keyPassed)
+  {
+    this->key = keyPassed;
+  }
 
-      void setValue(char valuePassed){
-        this->value = valuePassed;
-      }
+  void setValue(char valuePassed)
+  {
+    this->value = valuePassed;
+  }
 
-      void setKV(unsigned addr, char rw){
-        this->setKey(addr);
-        this->setValue(rw);
-      }
-
-      
-
+  void setKV(unsigned addr, char rw)
+  {
+    this->setKey(addr);
+    this->setValue(rw);
+  }
 };
 
 class NewMap
 {
-  private:
-    vector<Pairs> map;
-  public:
-    void insert(Pairs pair){
-      map.push_back(pair);
-    }
-    void remove(){
-      map.pop_back();
-    }
+private:
+  vector<Pairs> map;
 
-    bool isWrite(){
-      char rw = this->map.back().getValue();
-      if(rw == 'W'){
-        return true;
-      }
-      else{
-        return false;
-      }
+public:
+  void insert(Pairs pair)
+  {
+    map.push_back(pair);
+  }
+  void remove()
+  {
+    map.pop_back();
+  }
+
+  bool isWrite()
+  {
+    char rw = this->map.back().getValue();
+    if (rw == 'W')
+    {
+      return true;
     }
-    void removeLast(){
-      this->map.pop_back();
+    else
+    {
+      return false;
     }
-    void printList(){
-        for(int i =0; i < this->map.size(); ++i){
-          cout << hex << this->map[i].getKey()<< ": "<< this->map[i].getValue()<< "\n";
-        }
+  }
+  void removeLast()
+  {
+    this->map.pop_back();
+  }
+  void printList()
+  {
+    for (int i = 0; i < this->map.size(); ++i)
+    {
+      cout << hex << this->map[i].getKey() << ": " << this->map[i].getValue() << "\n";
     }
+  }
 };
 
+// dll node
+class Node
+{
+public:
+unsigned addr;
+  char rw;
+  Node *next;
+  Node *prev;
+  Node(unsigned addr, char rw)
+  {
+    this->addr = addr;
+    this->rw = rw;
+    this->next = NULL;
+    this->prev = NULL;
+  }
+};
+// lru cache class with head and tail set to null, size 0, maxSize 4, constructor, put and get functions
+class LRUCache
+{
+
+public:
+  int size;
+  int maxSize;
+  Node *head;
+  Node *tail;
+  LRUCache(int maxSize)
+  {
+    this->head = NULL;
+    this->tail = NULL;
+    this->size = 0;
+    this->maxSize = maxSize;
+  }
+  void put(unsigned addr, char rw)
+  {
+    // check if cache has the value, 
 
 
-int main(int argc, char const *argv[]) {
+  }
+  void get(unsigned addr);
+  void printList()
+  {
+    Node *current = this->head;
+    while (current != NULL)
+    {
+      cout << hex << current->addr << ": " << current->rw << "\n";
+      current = current->next;
+    }
+  }
+};
+
+int main(int argc, char const *argv[])
+{
 
   ifstream file;
   file.open("bzip.trace");
@@ -79,27 +140,19 @@ int main(int argc, char const *argv[]) {
   char value;
   Pairs KVpair;
   NewMap refList;
-  while(file >> hex >> address >> value){
-    KVpair.setKV(address,value);
+  while (file >> hex >> address >> value)
+  {
+    KVpair.setKV(address, value);
     refList.insert(KVpair);
   }
-  
+
   refList.printList();
 
   vector<unsigned int> pageTable;
   NewMap memory;
 
+  // lru cache
   
-
-
-
-
-
-
-
-
-
-
 
 
 
@@ -110,25 +163,24 @@ int main(int argc, char const *argv[]) {
   //   cout << "\n";
   //   ++itr;
   // }
-  
-//   queue <unsigned, page_number> page_table;
 
-//   for (itr = symbolTable.begin(); itr != symbolTable.end(); it++)
-//   {
-//     if itr->first
-//     it->first    // string (key)
-//     it->second   // string's value 
-// }
+  //   queue <unsigned, page_number> page_table;
 
-// so the references is just like a list of commands
-// we still need to have memory and a page table
+  //   for (itr = symbolTable.begin(); itr != symbolTable.end(); it++)
+  //   {
+  //     if itr->first
+  //     it->first    // string (key)
+  //     it->second   // string's value
+  // }
 
-// vector <unsigned> page_table;
+  // so the references is just like a list of commands
+  // we still need to have memory and a page table
+
+  // vector <unsigned> page_table;
   // fclose(file);
 }
 
 // create a memory map that maps the page table exactly, then do the same operations from there as well
-
 
 // void push(vector pageTable, std::map mem_lib, const int pageNumber, int &reads, int &writes, int &fault){
 //     map<unsigned, char>::iterator itr; // iterator for reference commands
@@ -136,12 +188,11 @@ int main(int argc, char const *argv[]) {
 //     map<unsigned, char>::iterator iter = mem_lib.begin(); //iterator for the memory map
 //     //the page table is a vector storing only the addess of the commands
 
-
 //     for(itr->first = mem_lib.begin(); itr != mem_lib.end(); itr++){ //going through all the commands
 //         // if we found the element in the page table then it is a hit
 //         if (std::binary_search(pageTable.begin(), pageTable.end(), itr->first){
 //             cout << "Hit \n";
-//             return; 
+//             return;
 //         }
 //         // if the element is not in the table, we need to check if there is room
 
@@ -151,7 +202,7 @@ int main(int argc, char const *argv[]) {
 //             memory.insert(std::pair<unsigned, int>(itr->first, itr->second));
 //             read++;
 //             fault++;
-//             return; 
+//             return;
 //         }
 //         else{// if it is not in memory and the space is full                           //need to determine if the last access was a write then the page is dirty, it must be saved, i.e. write ++
 //             auto it = memory.end();
@@ -159,9 +210,9 @@ int main(int argc, char const *argv[]) {
 //             pageTable.pop_back();
 //             memory.erase(it); // deleting the last element of the memory map
 //             pageTable.insert(pageTable.begin(), itr->first);
-            
+
 //             //some way to check if there were any previous write operations ??
-//             read++; 
+//             read++;
 //             fault++;
 //         }
 //     }
