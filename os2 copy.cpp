@@ -7,97 +7,155 @@
 
 using namespace std;
 
-class Pairs
-{
-    private:
-        unsigned key;
-        char value;
+// class Pairs
+// {
+//     // private:
+//         // unsigned key;
+//         // char value;
 
-    public:
-      unsigned getKey(){
-          return this->key;
-      }
-      char getValue(){
-          return this->value;
-      }
+//     public:
+//       unsigned key;
+//       char value;
 
-      void setKey(unsigned keyPassed){
-        this->key = keyPassed;
-      }
+//       unsigned getKey(){
+//           return this->key;
+//       }
+//       char getValue(){
+//           return this->value;
+//       }
 
-      void setValue(char valuePassed){
-        this->value = valuePassed;
-      }
+//       void setKey(unsigned keyPassed){
+//         this->key = keyPassed;
+//       }
 
-      void setKV(unsigned addr, char rw){
-        this->setKey(addr);
-        this->setValue(rw);
-      }
+//       void setValue(char valuePassed){
+//         this->value = valuePassed;
+//       }
+
+//       void setKV(unsigned addr, char rw){
+//         this->setKey(addr);
+//         this->setValue(rw);
+//       }
 
       
 
-};
+// };
 
-class NewMap
-{
-  private:
-    vector<Pairs> map;
-  public:
-    void insert(Pairs pair){
-      map.push_back(pair);
-    }
-    void remove(){
-      map.pop_back();
-    }
+// class NewMap
+// {
+//   private:
+//     vector<Pairs> map;
+//   public:
+//     void insert(Pairs pair){
+//       map.push_back(pair);
+//     }
+//     void remove(){
+//       map.pop_back();
+//     }
 
-    bool isWrite(){
-      char rw = this->map.back().getValue();
-      if(rw == 'W'){
-        return true;
-      }
-      else{
-        return false;
-      }
-    }
-    void removeLast(){
-      this->map.pop_back();
-    }
-    void printList(){
-        for(int i =0; i < this->map.size(); ++i){
-          cout << hex << this->map[i].getKey()<< ": "<< this->map[i].getValue()<< "\n";
-        }
-    }
-    vector<Pairs> getList(){
-      return this->map;
-    }
-};
+//     bool isWrite(){
+//       char rw = this->map.back().getValue();
+//       if(rw == 'W'){
+//         return true;
+//       }
+//       else{
+//         return false;
+//       }
+//     }
+//     void removeLast(){
+//       this->map.pop_back();
+//     }
+//     void printList(){
+//         for(int i =0; i < this->map.size(); ++i){
+//           cout << hex << this->map[i].getKey()<< ": "<< this->map[i].getValue()<< "\n";
+//         }
+//     }
+//     vector<Pairs> getList(){
+//       return this->map;
+//     }
+//     vector<Pairs>::iterator search(unsigned int addr){
+//       vector<Pairs>::iterator it;
+//       it = find(this->getList().begin(), this->getList().end(), addr)
+//     }
+// };
 
 
 
 int main(int argc, char const *argv[]) {
 
+  map<unsigned, char> memory;
+  vector<unsigned> pageTable; 
   ifstream file;
   file.open("test.trace");
-  unsigned int address;
-  char value;
-  Pairs KVpair;
-  NewMap refList;
-  while(file >> hex >> address >> value){
-    KVpair.setKV(address,value);
-    refList.insert(KVpair);
+  unsigned address;
+  char rw;
+  // Pairs KVpair;
+  // NewMap refList;
+  int trace = 0;
+  int totalFrames = 64;
+  int totalRead = 0;
+  int totalWrite = 0;
+  while(file >> hex >> address >> rw){
+    // Adjusting the address according to the offset
+    address = address/4096;
+    trace ++;
+    // KVpair.setKV(address,value);
+    // refList.insert(KVpair);
+
+    // The page is found in the memory
+    if(memory.find(address) != memory.end()){
+      if(memory[address] == 'R'){
+        memory[address] = rw;
+      }
+    }
+
+    //When the page cannot be found, two cases arise: 1. The memory is full, or the memory has space
+    else{
+      
+      //case 1: Memory has space
+      if(memory.size() >= totalFrames){
+        pageTable.insert(pageTable.begin(), address);
+        memory[address] = rw;
+      }
+      //case 2: Memory is full and we need to replace a page
+      else{
+        //checking if the most recent memory access is a write/dirty
+        unsigned mostRecent = pageTable.front();
+        unsigned firstOut = pageTable.back();
+        if(memory[mostRecent]=='W'){
+          //incrementing write count
+          totalWrite ++;
+        }
+        else{
+          //removing from the page table
+          memory.erase(firstOut);
+          pageTable.pop_back();
+          pageTable.insert(pageTable.begin(), address);
+        }
+      }
+      // No matter, what case it is, we need to access the hard disk and therefore the read count goes up
+      totalRead++;
+    }
+
+  cout << "Frames: " << totalFrames << "\n";
+  cout << "Trace Count: " << trace << "\n";
+  cout << "Total Reads: " << totalRead << "\n";
+  cout << "Total Writes: "<< totalWrite << "\n";
   }
   
-  refList.printList();
+  // refList.printList();
 
-  vector<unsigned int> pageTable;
-  NewMap memory;
+  // vector<unsigned int> pageTable;
+  // NewMap memory;
 
-  for (int i = 0; i < refList.getList().size(); i++){
-    int temp = refList.getList()[i].getKey();
-    int temp2 = (int)temp/4096;
-    cout <<"\n" << temp << ": "<< temp2;
-    // pageTable.push_back(temp/4096);
-  }
+  // for (int i = 0; i < refList.getList().size(); i++){
+  //   int temp = refList.getList()[i].getKey();
+  //   int temp2 = (int)temp/4096;
+  //   cout <<"\n" << temp << ": "<< temp2;
+  //   // pageTable.push_back(temp/4096);
+  // }
+
+  //case 1: Address found
 
   // for(int i =0; i < pageTable.size();i++){
   //   cout << pageTable[i] << "\n";
