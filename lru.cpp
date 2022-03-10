@@ -137,7 +137,7 @@ void lru(int frameNumber, int pageSize, vector<Pairs> &addr_map){
     
 }
 
-void fifo(int frameNumber, int pageSize, vector<Pairs> &addr_map){
+void fifo(int frameNumber, int pageSize, vector<Pairs> &addr_map, string mode){
     int pageFaults = 0;
     int diskReads = 0;
     int diskWrites = 0;
@@ -192,15 +192,25 @@ void fifo(int frameNumber, int pageSize, vector<Pairs> &addr_map){
 
 int main(int argc, char const *argv[])
 {
-    if(argc != 5){
+    if(argc < 5){
         cout << "Incorrect number of argements!";
-        cout << "The program requires exactly 5 arguments in the format: ";
-        cout << "memsim <tracefile> <nframes> <lru|fifo|vms> <debug|quiet>";
+        cout << "The program requires exactly 5(6 in case of vms) arguments in the format:";
+        cout << "memsim <tracefile> <nframes> <lru|fifo|vms> <p(only needed for vms)> <debug|quiet>";
         return 0;
     }
     string traceFile = argv[1];
     int nFrames = atoi(argv[2]);
     string algoName = argv[3];
+    int partion = 0;
+    string mode;
+    if (algoName == "vms"){
+        partion = atoi(argv[4]);
+        mode = argv[5];
+    }
+    else{
+        mode = argv[4];
+    }
+    
 
     ifstream file;
     file.open(traceFile);
@@ -219,13 +229,14 @@ int main(int argc, char const *argv[])
 
     //   refList.printList();
     // print total events
-    cout << "Total events: " << totalEvents << endl;
+    // cout << "Total events: " << totalEvents << endl;
     
+    //starting the needed algorithm
     if(algoName == "fifo"){
-        fifo(nFrames, 4096, refList.map);
+        fifo(nFrames, 4096, refList.map, mode);
     }
     else if(algoName == "lru"){
-        fifo(nFrames, 4096, refList.map);
+        lru(nFrames, 4096, refList.map);
     }
     // else if(algoName == "vms"){
 
@@ -237,7 +248,7 @@ int main(int argc, char const *argv[])
     }
 
     lru(64, 4096, refList.map);
-    fifo(64, 4096, refList.map);
+    fifo(64, 4096, refList.map, mode);
 
     return 0;
 }
