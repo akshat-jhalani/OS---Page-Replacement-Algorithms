@@ -137,12 +137,73 @@ void lru(int frameNumber, int pageSize, vector<Pairs> &addr_map){
     
 }
 
+void fifo(int frameNumber, int pageSize, vector<Pairs> &addr_map){
+    int pageFaults = 0;
+    int diskReads = 0;
+    int diskWrites = 0;
 
+    //addr_map is just a vector<pairs>
+
+    std::queue<unsigned int> pageTable;
+    std::map<unsigned int, char> memory;
+
+    for(int i = 0; i < addr_map.size(); i++){
+        unsigned offset = addr_map[i].getKey();
+        offset = offset/4096; //adjusting the address offset
+
+        //is the address is found in tfound in the memory map:
+        if(memory.find(offset)!= memory.end()){
+            if(memory[offset]=='R'){
+                memory[offset] = addr_map[i].getValue();
+            }
+        }
+
+        //page not found in memory
+        else{
+            // need to access disk:
+            diskReads++;
+
+            // if the page table has space:
+            if(frameNumber < pageTable.size()){
+                pageTable.push(offset);
+                memory[offset] = addr_map[i].getValue();
+            }
+            else{ //The memory has no room
+                //checking if the element to be replaced is dirty:
+                if(memory[pageTable.front()]== 'R'){
+                    diskWrites ++;
+                }
+                //removing the oldest element from the pageTable and the memory
+                memory.erase(pageTable.front());
+                pageTable.pop();
+                //adding the new element
+                pageTable.push(offset);
+                memory[offset] = addr_map[i].getValue(); 
+            }
+
+        }
+    }
+
+    cout << "Total memory frames: " <<frameNumber;
+    cout << "events in trace: " << addr_map.size();
+    cout << "Total disk reads: " << diskReads;
+    cout << "Total disk writes: " << diskWrites;
+}
 
 int main(int argc, char const *argv[])
 {
+    if(argc != 5){
+        cout << "Incorrect number of argements!";
+        cout << "The program requires exactly 5 arguments in the format: ";
+        cout << "memsim <tracefile> <nframes> <lru|fifo|vms> <debug|quiet>";
+        return 0;
+    }
+    string traceFile = argv[1];
+    int nFrames = atoi(argv[2]);
+    string algoName = argv[3];
+
     ifstream file;
-    file.open("sixpack.trace");
+    file.open(traceFile);
     unsigned int address;
     char value;
     Pairs KVpair;
@@ -159,8 +220,24 @@ int main(int argc, char const *argv[])
     //   refList.printList();
     // print total events
     cout << "Total events: " << totalEvents << endl;
-    lru(64, 4096, refList.map);
+    
+    if(algoName == "fifo"){
+        fifo(nFrames, 4096, refList.map);
+    }
+    else if(algoName == "lru"){
+        fifo(nFrames, 4096, refList.map);
+    }
+    // else if(algoName == "vms"){
 
+    // }
+    else{
+        cout << "Invalid argument for argument name!";
+        cout << "Please enter one of the three <lru|fifo|vms>";
+        return 0;
+    }
+
+    lru(64, 4096, refList.map);
+    fifo(64, 4096, refList.map);
 
     return 0;
 }
