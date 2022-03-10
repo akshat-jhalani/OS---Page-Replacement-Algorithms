@@ -120,15 +120,15 @@ int main(int argc, char const *argv[]) {
       //case 2: Memory is full and we need to replace a page
       else{
         //checking if the most recent memory access is a write/dirty
-        unsigned mostRecent = pageTable.front();
-        unsigned firstOut = pageTable.back();
-        if(memory[mostRecent]=='W'){
+        // unsigned mostRecent = pageTable.front();
+        // unsigned firstOut = pageTable.back();
+        if(memory[pageTable.front()]=='W'){
           //incrementing write count
           totalWrite ++;
         }
         else{
           //removing from the page table
-          memory.erase(firstOut);
+          memory.erase(pageTable.back());
           pageTable.pop_back();
           pageTable.insert(pageTable.begin(), address);
         }
@@ -136,12 +136,12 @@ int main(int argc, char const *argv[]) {
       // No matter, what case it is, we need to access the hard disk and therefore the read count goes up
       totalRead++;
     }
-
+  }
   cout << "Frames: " << totalFrames << "\n";
   cout << "Trace Count: " << trace << "\n";
   cout << "Total Reads: " << totalRead << "\n";
   cout << "Total Writes: "<< totalWrite << "\n";
-  }
+}
   
   // refList.printList();
 
@@ -196,7 +196,7 @@ int main(int argc, char const *argv[]) {
 
 // vector <unsigned> page_table;
   // fclose(file);
-}
+// }
 
 // create a memory map that maps the page table exactly, then do the same operations from there as well
 
