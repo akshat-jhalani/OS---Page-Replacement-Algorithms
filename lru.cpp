@@ -190,6 +190,50 @@ void fifo(int frameNumber, int pageSize, vector<Pairs> &addr_map, string mode){
     cout << "Total disk writes: " << diskWrites;
 }
 
+
+void segmentedFifo(int frameNumber, int pageSize, vector<Pairs> &addr_map, string mode, const int partition){
+
+    // form two queues - fifo and lru with each of their capacity based on the partition
+    std::queue<unsigned int> fifoBuffer;
+    std::queue<unsigned int> lruBuffer;
+    std::map<unsigned int, char> fifoMemory;
+    std::map<unsigned int, char> lruMemory;
+    int diskReads = 0;
+    int diskWrites = 0;
+
+    const int lruCapacity = (frameNumber * partition)/100; //since P represents percentage of memory alloted to the secondary buffer
+    const int fifoCapacity = frameNumber - lruCapacity; // primary buffer
+
+    for(int i =0; i < addr_map.size(); i++){
+        unsigned int address = addr_map[i].getKey();
+        address = address/ 4096; // adjustinbg the offset
+
+        // if the reference is present in the Primary or Secondary buffer: maybe need seperate cases 
+        if(fifoMemory.find(address)!= fifoMemory.end()){
+            if(fifoMemory[address]== 'R'){
+                fifoMemory[address] = addr_map[i].getValue(); // no need to update page table
+            }
+        }
+        else if(lruMemory.find(address)!=lruMemory.end()){ //element in the secondary buffer - need to take that page and push to primary/fifo
+            //if some element is in the secondary buffer, that means that the primary is full every time so no need to check
+            unsigned temp = fifoBuffer.front(); // the element to be moved to lru buffer
+            if(fifoMemory[fifoBuffer.front()] == 'W'){ //incrementing disk writes
+                diskWrites ++;
+            }
+            fifoMemory.erase(fifoBuffer.front());//removing from memory
+            fifoBuffer.pop();// updating page table
+            fifoMemory[address] = addr_map[i].getValue();//putting in the referenced element
+            fifoBuffer.push(address); // updating the page table again
+
+            //lru part ^^^
+        }
+
+
+    }
+
+}
+
+
 int main(int argc, char const *argv[])
 {
     if(argc < 5){
