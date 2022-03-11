@@ -401,7 +401,7 @@ void segmentedFifo(int frameNumber, vector<Pairs> &addr_map, string mode, const 
 
         // if the reference is present in the Primary or Secondary buffer
         if (fifoMemory.find(address) != fifoMemory.end()) //checking if present in the primary/fifo
-        {
+        { // No reads since already in the buffer, no writes since we are just returning
             if (fifoMemory[address] == 'R')
             {
                 fifoMemory[address] = addr_map[i].getValue(); // no need to update page table
@@ -409,26 +409,28 @@ void segmentedFifo(int frameNumber, vector<Pairs> &addr_map, string mode, const 
         }
 
         
-        else if (lruMemory.find(address) != lruMemory.end()) // checking in the secondary/lru -- The element is in the secondary
-        {                                                    // element in the secondary buffer - need to take that page and push to primary/fifo
+
+        else if (lruMemory.find(address) != lruMemory.end()) // element in the secondary buffer - need to take that page and push to primary/fifo
+        {                                                    // 
             // if some element is in the secondary buffer, that means that the primary is full every time so no need to check
             unsigned temp = fifoBuffer.front(); // the element to be moved to lru buffer
             // updating the primary first
             if (fifoMemory[fifoBuffer.front()] == 'W')
             { // incrementing disk writes
-                // diskWrites++; // storing in the secondary buffer here ^^^
+                diskWrites++; // test1 ^^^^
             }
             fifoMemory.erase(fifoBuffer.front());         // removing from primary
             fifoBuffer.pop();                             // updating primary page table
             fifoMemory[address] = addr_map[i].getValue(); // putting in the referenced element
             fifoBuffer.push(address);                     // updating the page table again
 
-            // lru part ^^^ need to move the removed element to lru buffer: two cases - has space / no space
+            // incorrect logic here ^^^^^^^^^^^^^^^^^^^
+            
             if (lruMemory.size() < lruCapacity)
             {                                                // lru buffer has space and we just insert the element in it
                 lruMemory[address] = addr_map[i].getValue(); //inserting the value
                 indexMap[address] = i;                       //updating the indexmap
-                // diskReads++;
+                diskReads++; //test2 ^^^^^
 
 
             }
@@ -451,7 +453,7 @@ void segmentedFifo(int frameNumber, vector<Pairs> &addr_map, string mode, const 
                 {
                     diskWrites++;
                 }
-
+                diskReads++; // test3 ^^^^
                 // Remove the indexes page
                 lruMemory.erase(val);
                 // insert the current page
@@ -463,16 +465,16 @@ void segmentedFifo(int frameNumber, vector<Pairs> &addr_map, string mode, const 
 
         else // if the element is not present in the primary or secondary buffer
         {
-            
+            diskReads++; //Accessing memory regardless
             // then we need to check if the primary buffer is full or not
             if (fifoBuffer.size() < fifoCapacity) // put in primary if it has space
             {
                 fifoBuffer.push(address);
                 fifoMemory[address] = addr_map[i].getValue();
-                diskReads++;
+                // diskReads++;
             }
             else
-            { // if it is full, check secondary
+            { // if it is full, juggle from the primary to the secondary
 
                 unsigned temp1 = fifoBuffer.front(); // the element to be moved to lru buffer
                 // updating the primary first
@@ -491,8 +493,8 @@ void segmentedFifo(int frameNumber, vector<Pairs> &addr_map, string mode, const 
                 // we move on to figure out where to store the temp element
                 if (lruMemory.size() < lruCapacity) //secondary has space
                 {                                                // lru buffer has space and we just insert the element in it
-                    lruMemory[address] = addr_map[i].getValue(); //inserting the value
-                    indexMap[address] = i;                       //updating the indexmap
+                    lruMemory[temp1] = addr_map[i].getValue(); //inserting the value
+                    indexMap[temp1] = i;                       //updating the indexmap
                     // diskReads++;
 
                     
