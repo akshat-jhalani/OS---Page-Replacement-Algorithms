@@ -99,6 +99,17 @@
     "unordered_map": "cpp",
     "utility": "cpp",
     "vector": "cpp",
-    "filesystem": "cpp"
+    "filesystem": "cpp",
+    "codecvt": "cpp",
+    "compare": "cpp",
+    "condition_variable": "cpp",
+    "numeric": "cpp",
+    "random": "cpp",
+    "thread": "cpp",
+    "*.tcc": "cpp",
+    "concepts": "cpp",
+    "memory_resource": "cpp",
+    "ranges": "cpp",
+    "stop_token": "cpp"
   }
 }
