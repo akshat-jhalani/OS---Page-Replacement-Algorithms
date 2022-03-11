@@ -76,13 +76,14 @@ public:
     {
         for (int i = 0; i < this->map.size(); ++i)
         {
-            cout << hex << this->map[i].getKey() << ": " << this->map[i].getValue() << "\n";
+            std::cout << hex << this->map[i].getKey() << ": " << this->map[i].getValue() << "\n";
         }
     }
 };
 
 // function to implement lru cache replacement algorithm
-void lru(int frameNumber, int pageSize, vector<Pairs> &addr_map){
+void lru(int frameNumber, vector<Pairs> &addr_map, string mode)
+{
     // create a queue to store the pages
     queue<unsigned int> pageTable;
     // set total memory frames to 64
@@ -90,108 +91,239 @@ void lru(int frameNumber, int pageSize, vector<Pairs> &addr_map){
     int pageFaults = 0;
     int diskReads = 0;
     int diskWrites = 0;
+    int traceCount = 0;
 
     // create a map to store the page table
-    map<unsigned int, int> pageTableMap;
+    map<unsigned int, char> memory;
     // create a map to store the page table
-    map<unsigned int, int>::iterator it;
+    map<unsigned int, char>::iterator it;
 
-    // append addr_map to page table map
-    for (int i = 0; i < addr_map.size(); i++){
-        pageTableMap.insert(pair<unsigned int, int>(addr_map[i].getKey(), i));
-    }
+    //
+    map<unsigned int, int> indexMap;
+    map<unsigned int, int>::iterator it1;
 
-    // iterate through the page table map, counting page faults and disk reads/writes
-    for (it = pageTableMap.begin(); it != pageTableMap.end(); it++){
-        // if the page is not in the page table, increment page faults
-        if (pageTable.size() < frameNumber){
-            pageTable.push(it->first);
-            pageFaults++;
-            if (addr_map[it->second].getValue() == 'W'){
-                diskWrites++;
+    // MODE: debug or quiet
+    if (mode == "quiet")
+    {
+        std::cout << "QUIET MODE" << endl;
+        // iterate through the address map
+        for (int i = 0; i < addr_map.size(); i++)
+        {
+            // get the key and value from the map
+            unsigned int key = addr_map[i].getKey();
+            char value = addr_map[i].getValue();
+
+            key /= 4096;
+
+            if (memory.size() < frameNumber)
+            {
+                if (memory.find(key) == memory.end())
+                {
+                    memory[key] = value;
+                    // increment page fault
+                    pageFaults++;
+                }
+
+                // Store the recently used index of
+                // each page
+                indexMap[key] = i;
             }
-            else{
-                diskReads++;
+            // If the set is full then need to perform lru
+            // i.e. remove the least recently used page
+            // and insert the current page
+            else
+            {
+                if (memory.find(key) == memory.end())
+                {
+
+                    // Find the least recently used pages
+                    // that is present in the set
+                    diskReads++;
+                    int lru = INT_MAX, val;
+                    for (it = memory.begin(); it != memory.end(); it++)
+                    {
+                        if (indexMap[it->first] < lru)
+                        {
+                            lru = indexMap[it->first];
+                            val = it->first;
+                        }
+                    }
+
+                    if (memory[val] == 'W')
+                    {
+                        diskWrites++;
+                    }
+
+                    // Remove the indexes page
+                    memory.erase(val);
+
+                    // insert the current page
+                    memory[key] = value;
+
+                    // Increment page faults
+                    pageFaults++;
+                }
+                // Update the current page index
+                indexMap[key] = i;
             }
+
+            // // print the page table
+            // std::cout << "Page Table: ";
+            // for (int j = 0; j < pageTable.size(); j++){
+            //     std::cout << pageTable.front() << " ";
+            //     pageTable.pop();
+            // }
+
+            // std::cout << endl;
+            // // print the memory
+            // std::cout << "Memory: ";
+            // for (it = memory.begin(); it != memory.end(); it++){
+            //     std::cout << it->first << " ";
+            // }
+            // std::cout << endl;
+
+            // reset the page table
+            pageTable.push(key);
         }
-        // if the page is in the page table, remove it from the page table
-        else{
-            pageTable.pop();
-            pageTable.push(it->first);
-            if (addr_map[it->second].getValue() == 'W'){
-                diskWrites++;
+        std::cout << "Total memory frames: " << frameNumber << endl;
+        std::cout << "events in trace: " << addr_map.size() << endl;
+        std::cout << "Total disk reads: " << diskReads << endl;
+        std::cout << "Total disk writes: " << diskWrites << endl;
+    }
+    else if (mode == "debug")
+    {
+        std::cout << "DEBUG MODE" << endl;
+        // iterate through the address map
+        for (int i = 0; i < addr_map.size(); i++)
+        {
+            // get the key and value from the map
+            unsigned int key = addr_map[i].getKey();
+            char value = addr_map[i].getValue();
+
+            key /= 4096;
+
+            if (memory.size() < frameNumber)
+            {
+                if (memory.find(key) == memory.end())
+                {
+                    memory[key] = value;
+                    // increment page fault
+                    pageFaults++;
+                }
+
+                // Store the recently used index of
+                // each page
+                indexMap[key] = i;
             }
-            else{
-                diskReads++;
+            // If the set is full then need to perform lru
+            // i.e. remove the least recently used page
+            // and insert the current page
+            else
+            {
+                if (memory.find(key) == memory.end())
+                {
+
+                    // Find the least recently used pages
+                    // that is present in the set
+                    diskReads++;
+                    int lru = INT_MAX, val;
+                    for (it = memory.begin(); it != memory.end(); it++)
+                    {
+                        if (indexMap[it->first] < lru)
+                        {
+                            lru = indexMap[it->first];
+                            val = it->first;
+                        }
+                    }
+
+                    if (memory[val] == 'W')
+                    {
+                        diskWrites++;
+                    }
+
+                    // Remove the indexes page
+                    memory.erase(val);
+
+                    // insert the current page
+                    memory[key] = value;
+
+                    // Increment page faults
+                    pageFaults++;
+                }
+                // Update the current page index
+                indexMap[key] = i;
             }
+            pageTable.push(key);
+            std::cout << "Total memory frames: " << frameNumber << endl;
+            std::cout << "Events in trace: " << addr_map.size() << endl;
+            std::cout << "Total disk reads: " << diskReads << endl;
+            std::cout << "Total disk writes: " << diskWrites << endl;
         }
     }
-
-
-    // print the page faults
-    cout << "Page faults: " << pageFaults << endl;
-    // print the disk reads
-    cout << "Disk reads: " << diskReads << endl;
-    // print the disk writes
-    cout << "Disk writes: " << diskWrites << endl;
-    
 }
 
-void fifo(int frameNumber, int pageSize, vector<Pairs> &addr_map, string mode){
+void fifo(int frameNumber, int pageSize, vector<Pairs> &addr_map, string mode)
+{
     int pageFaults = 0;
     int diskReads = 0;
     int diskWrites = 0;
 
-    //addr_map is just a vector<pairs>
+    // addr_map is just a vector<pairs>
 
     std::queue<unsigned int> pageTable;
     std::map<unsigned int, char> memory;
 
-    for(int i = 0; i < addr_map.size(); i++){
+    for (int i = 0; i < addr_map.size(); i++)
+    {
         unsigned offset = addr_map[i].getKey();
-        offset = offset/4096; //adjusting the address offset
+        offset = offset / 4096; // adjusting the address offset
 
-        //is the address is found in tfound in the memory map:
-        if(memory.find(offset)!= memory.end()){
-            if(memory[offset]=='R'){
+        // is the address is found in tfound in the memory map:
+        if (memory.find(offset) != memory.end())
+        {
+            if (memory[offset] == 'R')
+            {
                 memory[offset] = addr_map[i].getValue();
             }
         }
 
-        //page not found in memory
-        else{
+        // page not found in memory
+        else
+        {
             // need to access disk:
             diskReads++;
 
             // if the page table has space:
-            if(frameNumber < pageTable.size()){
+            if (frameNumber < pageTable.size())
+            {
                 pageTable.push(offset);
                 memory[offset] = addr_map[i].getValue();
             }
-            else{ //The memory has no room
-                //checking if the element to be replaced is dirty:
-                if(memory[pageTable.front()]== 'R'){
-                    diskWrites ++;
+            else
+            { // The memory has no room
+                // checking if the element to be replaced is dirty:
+                if (memory[pageTable.front()] == 'R')
+                {
+                    diskWrites++;
                 }
-                //removing the oldest element from the pageTable and the memory
+                // removing the oldest element from the pageTable and the memory
                 memory.erase(pageTable.front());
                 pageTable.pop();
-                //adding the new element
+                // adding the new element
                 pageTable.push(offset);
-                memory[offset] = addr_map[i].getValue(); 
+                memory[offset] = addr_map[i].getValue();
             }
-
         }
     }
 
-    cout << "Total memory frames: " <<frameNumber;
-    cout << "events in trace: " << addr_map.size();
-    cout << "Total disk reads: " << diskReads;
-    cout << "Total disk writes: " << diskWrites;
+    std::cout << "Total memory frames: " << frameNumber;
+    std::cout << "events in trace: " << addr_map.size();
+    std::cout << "Total disk reads: " << diskReads;
+    std::cout << "Total disk writes: " << diskWrites;
 }
 
-
-void segmentedFifo(int frameNumber, int pageSize, vector<Pairs> &addr_map, string mode, const int partition){
+void segmentedFifo(int frameNumber, int pageSize, vector<Pairs> &addr_map, string mode, const int partition)
+{
 
     // form two queues - fifo and lru with each of their capacity based on the partition
     std::queue<unsigned int> fifoBuffer;
@@ -201,45 +333,47 @@ void segmentedFifo(int frameNumber, int pageSize, vector<Pairs> &addr_map, strin
     int diskReads = 0;
     int diskWrites = 0;
 
-    const int lruCapacity = (frameNumber * partition)/100; //since P represents percentage of memory alloted to the secondary buffer
-    const int fifoCapacity = frameNumber - lruCapacity; // primary buffer
+    const int lruCapacity = (frameNumber * partition) / 100; // since P represents percentage of memory alloted to the secondary buffer
+    const int fifoCapacity = frameNumber - lruCapacity;      // primary buffer
 
-    for(int i =0; i < addr_map.size(); i++){
+    for (int i = 0; i < addr_map.size(); i++)
+    {
         unsigned int address = addr_map[i].getKey();
-        address = address/ 4096; // adjustinbg the offset
+        address = address / 4096; // adjusting the offset
 
-        // if the reference is present in the Primary or Secondary buffer: maybe need seperate cases 
-        if(fifoMemory.find(address)!= fifoMemory.end()){
-            if(fifoMemory[address]== 'R'){
+        // if the reference is present in the Primary or Secondary buffer: maybe need seperate cases
+        if (fifoMemory.find(address) != fifoMemory.end())
+        {
+            if (fifoMemory[address] == 'R')
+            {
                 fifoMemory[address] = addr_map[i].getValue(); // no need to update page table
             }
         }
-        else if(lruMemory.find(address)!=lruMemory.end()){ //element in the secondary buffer - need to take that page and push to primary/fifo
-            //if some element is in the secondary buffer, that means that the primary is full every time so no need to check
+        else if (lruMemory.find(address) != lruMemory.end())
+        { // element in the secondary buffer - need to take that page and push to primary/fifo
+            // if some element is in the secondary buffer, that means that the primary is full every time so no need to check
             unsigned temp = fifoBuffer.front(); // the element to be moved to lru buffer
-            if(fifoMemory[fifoBuffer.front()] == 'W'){ //incrementing disk writes
-                diskWrites ++;
+            if (fifoMemory[fifoBuffer.front()] == 'W')
+            { // incrementing disk writes
+                diskWrites++;
             }
-            fifoMemory.erase(fifoBuffer.front());//removing from memory
-            fifoBuffer.pop();// updating page table
-            fifoMemory[address] = addr_map[i].getValue();//putting in the referenced element
-            fifoBuffer.push(address); // updating the page table again
+            fifoMemory.erase(fifoBuffer.front());         // removing from memory
+            fifoBuffer.pop();                             // updating page table
+            fifoMemory[address] = addr_map[i].getValue(); // putting in the referenced element
+            fifoBuffer.push(address);                     // updating the page table again
 
-            //lru part ^^^
+            // lru part ^^^
         }
-
-
     }
-
 }
-
 
 int main(int argc, char const *argv[])
 {
-    if(argc < 5){
-        cout << "Incorrect number of argements!";
-        cout << "The program requires exactly 5(6 in case of vms) arguments in the format:";
-        cout << "memsim <tracefile> <nframes> <lru|fifo|vms> <p(only needed for vms)> <debug|quiet>";
+    if (argc < 5)
+    {
+        std::cout << "Incorrect number of arguments!";
+        std::cout << "The program requires exactly 5(6 in case of vms) arguments in the format:";
+        std::cout << "memsim <tracefile> <nframes> <lru|fifo|vms> <p(only needed for vms)> <debug|quiet>";
         return 0;
     }
     string traceFile = argv[1];
@@ -247,14 +381,15 @@ int main(int argc, char const *argv[])
     string algoName = argv[3];
     int partion = 0;
     string mode;
-    if (algoName == "vms"){
+    if (algoName == "vms")
+    {
         partion = atoi(argv[4]);
         mode = argv[5];
     }
-    else{
+    else
+    {
         mode = argv[4];
     }
-    
 
     ifstream file;
     file.open(traceFile);
@@ -274,27 +409,28 @@ int main(int argc, char const *argv[])
     //   refList.printList();
     // print total events
     // cout << "Total events: " << totalEvents << endl;
-    
-    //starting the needed algorithm
-    if(algoName == "fifo"){
+
+    // starting the needed algorithm
+    if (algoName == "fifo")
+    {
         fifo(nFrames, 4096, refList.map, mode);
     }
-    else if(algoName == "lru"){
-        lru(nFrames, 4096, refList.map);
+    else if (algoName == "lru")
+    {
+        lru(nFrames, refList.map, mode);
     }
     // else if(algoName == "vms"){
 
     // }
-    else{
-        cout << "Invalid argument for argument name!";
-        cout << "Please enter one of the three <lru|fifo|vms>";
+    else
+    {
+        std::cout << "Invalid argument for argument name!";
+        std::cout << "Please enter one of the three <lru|fifo|vms>";
         return 0;
     }
 
-    lru(64, 4096, refList.map);
-    fifo(64, 4096, refList.map, mode);
+    // lru(64, refList.map, mode);
+    // fifo(64, 4096, refList.map, mode);
 
     return 0;
 }
-
-
