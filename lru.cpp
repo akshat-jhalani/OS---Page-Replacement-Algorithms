@@ -395,6 +395,7 @@ void segmentedFifo(int frameNumber, vector<Pairs> &addr_map, string mode, const 
     const int fifoCapacity = frameNumber - lruCapacity;      // primary buffer
 
     for (int i = 0; i < addr_map.size(); i++)
+    // for (int i = 0; i < 1000; i++)
     {
         unsigned int address = addr_map[i].getKey();
         address = address / 4096; // adjusting the offset
@@ -414,23 +415,30 @@ void segmentedFifo(int frameNumber, vector<Pairs> &addr_map, string mode, const 
         {                                                    // 
             // if some element is in the secondary buffer, that means that the primary is full every time so no need to check
             unsigned temp = fifoBuffer.front(); // the element to be moved to lru buffer
+            char tempValue = fifoMemory[temp]; // seems to be working fine
+            // cout << tempValue << "\n"; 
             // updating the primary first
+
             if (fifoMemory[fifoBuffer.front()] == 'W')
             { // incrementing disk writes
-                diskWrites++; // test1 ^^^^
+                diskWrites++; // test1 ^^^^ : definately wrong bc this alone produces 750 writes!!!!!!
             }
+
             fifoMemory.erase(fifoBuffer.front());         // removing from primary
             fifoBuffer.pop();                             // updating primary page table
             fifoMemory[address] = addr_map[i].getValue(); // putting in the referenced element
             fifoBuffer.push(address);                     // updating the page table again
 
-            // incorrect logic here ^^^^^^^^^^^^^^^^^^^
-            
+
+            //forgot to remove the most recent element from secondary...
+            lruMemory.erase(address);
+
+
             if (lruMemory.size() < lruCapacity)
             {                                                // lru buffer has space and we just insert the element in it
-                lruMemory[address] = addr_map[i].getValue(); //inserting the value
-                indexMap[address] = i;                       //updating the indexmap
-                diskReads++; //test2 ^^^^^
+                lruMemory[temp] = tempValue; //inserting the value
+                indexMap[temp] = i;                       //updating the indexmap
+                // diskReads++; //test2 ^^^^^
 
 
             }
@@ -452,12 +460,13 @@ void segmentedFifo(int frameNumber, vector<Pairs> &addr_map, string mode, const 
                 if (lruMemory[val] == 'W')
                 {
                     diskWrites++;
-                }
+                } // This one is just adding 1 extra write
                 diskReads++; // test3 ^^^^
                 // Remove the indexes page
                 lruMemory.erase(val);
                 // insert the current page
-                lruMemory[temp] = addr_map[i].getValue();
+                lruMemory[temp] = tempValue;
+                indexMap[temp] = i;
             }
         }
 
@@ -477,11 +486,12 @@ void segmentedFifo(int frameNumber, vector<Pairs> &addr_map, string mode, const 
             { // if it is full, juggle from the primary to the secondary
 
                 unsigned temp1 = fifoBuffer.front(); // the element to be moved to lru buffer
+                char temp1Value = fifoMemory[temp1];
                 // updating the primary first
-                // if (fifoMemory[fifoBuffer.front()] == 'W')
-                // { // incrementing disk writes
-                //     diskWrites++;
-                // }
+                if (fifoMemory[fifoBuffer.front()] == 'W')
+                { // incrementing disk writes
+                    diskWrites++;
+                }
                 fifoMemory.erase(fifoBuffer.front());         // removing from primary
                 fifoBuffer.pop();                             // updating primary page table
                 fifoMemory[address] = addr_map[i].getValue(); // putting in the referenced element
@@ -493,7 +503,7 @@ void segmentedFifo(int frameNumber, vector<Pairs> &addr_map, string mode, const 
                 // we move on to figure out where to store the temp element
                 if (lruMemory.size() < lruCapacity) //secondary has space
                 {                                                // lru buffer has space and we just insert the element in it
-                    lruMemory[temp1] = addr_map[i].getValue(); //inserting the value
+                    lruMemory[temp1] = temp1Value; //inserting the value
                     indexMap[temp1] = i;                       //updating the indexmap
                     // diskReads++;
 
@@ -503,7 +513,7 @@ void segmentedFifo(int frameNumber, vector<Pairs> &addr_map, string mode, const 
                 { // no space, needs replacement
                     // Find the least recently used pages
                     // that is present in the set
-                    diskReads++;// memory access still
+                    // diskReads++;// memory access still
                     int lru = INT_MAX, val;
                     for (it = indexMap.begin(); it != indexMap.end(); it++)
                     {
@@ -517,12 +527,13 @@ void segmentedFifo(int frameNumber, vector<Pairs> &addr_map, string mode, const 
                     if (lruMemory[val] == 'W')
                     {
                         diskWrites++;
-                    }
+                    } //This is not doing anything ***********
 
                     // Remove the indexes page
                     lruMemory.erase(val);
                     // insert the current page
-                    lruMemory[temp1] = addr_map[i].getValue();
+                    lruMemory[temp1] = temp1Value;
+                    indexMap[temp1] = i;
                 }
             }
         }
