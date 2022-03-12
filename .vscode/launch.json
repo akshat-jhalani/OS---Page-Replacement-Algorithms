@@ -9,9 +9,9 @@
         ""
       ],
       "stopAtEntry": true,
-      "cwd": "/Users/abrorkhaytbaev/Desktop/OS---Page-Replacement-Algorithms",
+      "cwd": "/Users/abrorkhaytbaev/Desktop/usf/OS---Page-Replacement-Algorithms",
       "environment": [],
-      "program": "/Users/abrorkhaytbaev/Desktop/OS---Page-Replacement-Algorithms/build/Debug/outDebug",
+      "program": "/Users/abrorkhaytbaev/Desktop/usf/OS---Page-Replacement-Algorithms/build/Debug/outDebug",
       "internalConsoleOptions": "openOnSessionStart",
       "MIMode": "gdb",
       "externalConsole": false
