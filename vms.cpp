@@ -13,7 +13,16 @@ void segmentedFifo(int frameNumber, vector<Pairs> &addr_map, string mode, const 
 
     const int lruCapacity = (frameNumber * partition) / 100; // since P represents percentage of memory alloted to the secondary buffer
     const int fifoCapacity = frameNumber - lruCapacity;      // primary buffer
-
+//     edge cases
+    if(partition == 0){
+        fifo(frameNumber, addr_map, mode);
+        return;
+    }
+    if(partition == 100){
+        lru(frameNumber, addr_map, mode);
+        return;
+    }
+    
     for (int i = 0; i < addr_map.size(); i++)
     // for (int i = 0; i < 1000; i++)
     {
