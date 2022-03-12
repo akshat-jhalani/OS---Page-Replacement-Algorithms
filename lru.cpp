@@ -33,30 +33,28 @@ void lru(int frameNumber, vector<Pairs> &addr_map, string mode)
 
             key /= 4096;
 
-            if (memory.size() < frameNumber)
+            if (memory.size() < frameNumber) // memory has space
             {
-                if (memory.find(key) == memory.end())
+                if (memory.find(key) == memory.end()) //page not in memory
                 {
                     memory[key] = value;
-                    // increment page fault
-                    pageFaults++;
+                    diskReads++;
+                    cout << "Page faults: " << pageFaults << "\n";
                 }
 
                 // Store the recently used index of
                 // each page
                 indexMap[key] = i;
             }
-            // If the set is full then need to perform lru
-            // i.e. remove the least recently used page
-            // and insert the current page
-            else
+            else // when the memory is at capacity
             {
-                if (memory.find(key) == memory.end())
+                if (memory.find(key) == memory.end()) // page not in memory
                 {
 
                     // Find the least recently used pages
                     // that is present in the set
                     diskReads++;
+                    cout << "dr: " << diskReads << endl;
                     int lru = INT_MAX, val;
                     for (it = memory.begin(); it != memory.end(); it++)
                     {
@@ -71,7 +69,6 @@ void lru(int frameNumber, vector<Pairs> &addr_map, string mode)
                     {
                         diskWrites++;
                     }
-
                     // Remove the indexes page
                     memory.erase(val);
 
@@ -83,8 +80,12 @@ void lru(int frameNumber, vector<Pairs> &addr_map, string mode)
                 }
                 // Update the current page index
                 indexMap[key] = i;
+                if (memory[key] == 'R')
+                {
+                    memory[key] = addr_map[i].getValue();
+                }
             }
-            pageTable.push(key);
+            // pageTable.push(key);
         }
         std::cout << "Total memory frames: " << frameNumber << endl;
         std::cout << "events in trace: " << addr_map.size() << endl;
@@ -128,7 +129,7 @@ void lru(int frameNumber, vector<Pairs> &addr_map, string mode)
                     // that is present in the set
                     diskReads++;
                     int lru = INT_MAX, val;
-                    for (it = memory.begin(); it != memory.end(); it++)
+                    for (it1 = indexMap.begin(); it1 != indexMap.end(); it++)
                     {
                         if (indexMap[it->first] < lru)
                         {
